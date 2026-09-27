@@ -1,0 +1,11 @@
+body {
+  margin: 0;
+  background: #eeeeee;
+}
+
+@media (max-width: 640px) {
+  .brand-name,
+  .user-name {
+    display: none;
+  }
+}

@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String
+  endDate       DateTime?
+  description   String?
+  tags          String? // comma-separated, e.g. "office,2026"
+  fileId        String // Google Drive file ID
+  fileName      String
+  mimeType      String
+  createdAt     DateTime  @default(now())
+}
