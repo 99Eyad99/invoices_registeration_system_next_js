@@ -14,10 +14,15 @@ export default function LoginForm({ appName, from }: { appName: string; from: st
   async function onFinish(values: Values) {
     setLoading(true);
     setError("");
-    const result = await login(values.username, values.password, from);
-    // login() redirects on success, so we only get here on failure.
-    if (result?.error) setError(result.error);
-    setLoading(false);
+    try {
+      const result = await login(values.username, values.password, from);
+      // login() redirects on success, so we only get here on failure.
+      if (result?.error) setError(result.error);
+    } catch {
+      setError("Login failed because of a server error. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
