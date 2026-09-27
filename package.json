@@ -9,6 +9,7 @@
     "db:push": "prisma db push",
     "google:auth": "node --env-file=.env scripts/google-auth.mjs",
     "users:import": "node --env-file=.env scripts/import-users.mjs",
+    "users:add": "node --env-file=.env scripts/add-user.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
