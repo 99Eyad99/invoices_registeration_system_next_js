@@ -5,7 +5,7 @@ import { checkCredentials, endSession, startSession } from "@/lib/auth";
 import { safeRedirectPath } from "@/lib/session";
 
 export async function login(username: string, password: string, from: string): Promise<{ error: string }> {
-  if (!checkCredentials(username.trim(), password)) {
+  if (!(await checkCredentials(username.trim(), password))) {
     return { error: "Invalid username or password." };
   }
   await startSession(username.trim());

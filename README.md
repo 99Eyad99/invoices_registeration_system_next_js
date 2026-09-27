@@ -33,19 +33,18 @@ Files are downloaded through `/api/invoices/[id]/file`, which proxies them from 
 
 ## Users and login
 
-Users are defined in `users.json` at the project root:
+Users are stored in the database (`User` collection) with hashed passwords (scrypt).
+To add users or change passwords, list them in `users.json` (copy `users.example.json`) and import them:
 
-```json
-[
-  { "username": "admin", "password": "change-me" }
-]
+```bash
+npm run users:import
 ```
 
-Add, remove or edit entries there and restart the server. **Change the default password before deploying.**
+This creates new users and updates the password of existing ones. `users.json` is git-ignored; you can delete it after importing.
 
 - Every page and the file download API require login (`proxy.ts`); logged-out visitors are sent to `/login`.
 - A session lasts at most **2 hours** from login. After that the user has to log in again.
-- Sessions are stored in a signed, HTTP-only cookie (`lib/session.ts`); nothing is stored server-side.
+- Sessions are stored in a signed, HTTP-only cookie (`lib/session.ts`).
 - Use the **Logout** button in the header to end the session early.
 
 ## 3. Google Drive setup
@@ -89,7 +88,7 @@ The app uses MongoDB through Prisma. [MongoDB Atlas](https://www.mongodb.com/clo
    DATABASE_URL="mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/invoices?retryWrites=true&w=majority"
    ```
 
-5. Create the collection and indexes:
+5. Create the collections and indexes, then add your users (see *Users and login*):
 
 ```bash
 npm run db:push
@@ -140,6 +139,6 @@ lib/
   db.ts                               Prisma client
   format.ts                           Formatting for display
 proxy.ts                              Redirects logged-out users to /login
-users.json                            Users (username + password)
+scripts/import-users.mjs              Imports users.json into the database (hashed passwords)
 prisma/schema.prisma                  Invoice model
 ```

@@ -1,20 +1,25 @@
 import "server-only";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import users from "@/users.json";
+import { prisma } from "./db";
 import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, createSessionToken, verifySessionToken } from "./session";
 
-function sameText(a: string, b: string): boolean {
-  // Hash first so both buffers have equal length for timingSafeEqual.
-  const hash = (s: string) => createHash("sha256").update(s).digest();
-  return timingSafeEqual(hash(a), hash(b));
+// Passwords are stored as "salt:hash" (hex, scrypt). See scripts/import-users.mjs.
+const DUMMY_HASH = "00000000000000000000000000000000:" + "0".repeat(128);
+
+function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  const expected = Buffer.from(hash ?? "", "hex");
+  const actual = scryptSync(password, salt ?? "", 64);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-export function checkCredentials(username: string, password: string): boolean {
-  const user = users.find((u) => u.username === username);
-  // Always run a comparison so response time doesn't reveal whether the username exists.
-  return sameText(password, user?.password ?? "") && !!user;
+export async function checkCredentials(username: string, password: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { username } });
+  // Always hash once so response time doesn't reveal whether the username exists.
+  const ok = verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
+  return ok && !!user;
 }
 
 export async function startSession(username: string): Promise<void> {
