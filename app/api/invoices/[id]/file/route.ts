@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { findInvoice } from "@/lib/db";
 import { downloadFile } from "@/lib/drive";
 
 // Streams the invoice file from Google Drive through the server, so the browser never needs Drive access.
@@ -8,7 +8,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!(await getSession())) return new Response("Unauthorized", { status: 401 });
 
   const { id } = await params;
-  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  const invoice = await findInvoice(id);
   if (!invoice) return new Response("Invoice not found", { status: 404 });
 
   try {

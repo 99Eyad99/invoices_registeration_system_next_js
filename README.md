@@ -1,7 +1,7 @@
 # Invoice Management
 
 A simple Next.js (App Router, TypeScript) app to upload, search, view and download invoices.
-Invoice files are stored in Google Drive; invoice metadata is stored in PostgreSQL (e.g. free Neon) via Prisma.
+Invoice files are stored in Google Drive; invoice metadata is stored in MongoDB Atlas (free tier) via Prisma.
 The UI uses Ant Design and Ant Design Icons. All pages require login.
 
 ## 1. Installation
@@ -24,8 +24,7 @@ All configuration comes from `.env` (or `.env.local`). Nothing environment-speci
 | `GOOGLE_CLIENT_ID` | OAuth client ID (Google Cloud Console). |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret (Google Cloud Console). |
 | `GOOGLE_REFRESH_TOKEN` | Refresh token for the dedicated Google account. Get it with `npm run google:auth`. |
-| `DATABASE_URL` | PostgreSQL connection string (Neon **pooled** connection). |
-| `DIRECT_URL` | PostgreSQL direct connection string (Neon, pooling off). Used by `npm run db:push`. |
+| `DATABASE_URL` | MongoDB Atlas connection string, including the database name (e.g. `.../invoices?retryWrites=true&w=majority`). |
 | `MAX_FILE_SIZE_MB` | Maximum upload size in MB. Use `4` on Vercel's free plan (4.5 MB body limit). |
 | `SESSION_SECRET` | Secret used to sign login sessions, at least 32 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. |
 
@@ -78,13 +77,19 @@ revoke it (Google Account → Security → Third-party access) or change the acc
 
 ## 4. Database setup
 
-The app uses PostgreSQL through Prisma. [Neon](https://neon.tech) has a free plan:
+The app uses MongoDB through Prisma. [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) has a free (M0) cluster:
 
-1. Sign up at https://neon.tech and create a project (pick the region closest to you).
-2. On the project dashboard click **Connect**. Copy the connection string twice:
-   - with **Connection pooling ON** → `DATABASE_URL`
-   - with **Connection pooling OFF** → `DIRECT_URL`
-3. Put both in `.env` and create the table:
+1. Sign up at https://www.mongodb.com/cloud/atlas and create a **free M0** cluster.
+2. **Database Access** → add a database user with a username and password (avoid special characters like `@ : / ?` in the password, or URL-encode them).
+3. **Network Access** → **Add IP Address** → **Allow access from anywhere** (`0.0.0.0/0`). Vercel has no fixed IP address, so this is required for hosting.
+4. **Connect** → **Drivers** → copy the connection string and put it in `.env` as `DATABASE_URL`.
+   Replace `<db_password>` with the password and add the database name before the `?`:
+
+   ```env
+   DATABASE_URL="mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/invoices?retryWrites=true&w=majority"
+   ```
+
+5. Create the collection and indexes:
 
 ```bash
 npm run db:push
@@ -107,12 +112,12 @@ npm start
 
 Open http://localhost:3000.
 
-## 6. Free hosting (Vercel + Neon)
+## 6. Free hosting (Vercel + MongoDB Atlas)
 
 1. Push the project to a **private** GitHub repository (`.env` is git-ignored and is never pushed).
 2. Sign up at https://vercel.com with GitHub → **Add New → Project** → import the repository.
 3. Before clicking Deploy, open **Environment Variables** and add every variable from your `.env`
-   (`NEXT_PUBLIC_APP_NAME`, all `GOOGLE_*`, `DATABASE_URL`, `DIRECT_URL`, `MAX_FILE_SIZE_MB=4`, `SESSION_SECRET`).
+   (`NEXT_PUBLIC_APP_NAME`, all `GOOGLE_*`, `DATABASE_URL`, `MAX_FILE_SIZE_MB=4`, `SESSION_SECRET`).
 4. Click **Deploy**. Your app is live at `https://<project>.vercel.app`.
 
 After changing environment variables in Vercel, redeploy (Deployments → ⋯ → Redeploy).
